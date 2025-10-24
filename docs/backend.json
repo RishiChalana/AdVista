@@ -19,6 +19,10 @@
           "description": "User's email address.",
           "format": "email"
         },
+        "organizationName": {
+            "type": "string",
+            "description": "The name of the organization the user belongs to."
+        },
         "role": {
           "type": "string",
           "description": "User's role (Admin, Analyst, Viewer)."

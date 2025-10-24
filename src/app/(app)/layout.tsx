@@ -3,10 +3,12 @@
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useUser } from "@/firebase";
+import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { doc } from "firebase/firestore";
+import type { User } from "@/lib/types";
 
 function AppLoading() {
   return (
@@ -40,12 +42,26 @@ export default function AppLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<User>(userDocRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
-  }, [user, isUserLoading, router]);
+
+    if(!isUserProfileLoading && userProfile) {
+        if(userProfile.role === 'Admin') {
+            router.push('/admin');
+        }
+    }
+
+  }, [user, isUserLoading, router, userProfile, isUserProfileLoading]);
 
   if (isUserLoading || !user) {
     return <AppLoading />;

@@ -19,6 +19,7 @@ export type User = {
   email: string;
   role: 'Admin' | 'Analyst' | 'Viewer';
   avatar?: string;
+  organizationName?: string;
   createdAt: string;
 };
 

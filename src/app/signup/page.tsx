@@ -29,6 +29,7 @@ const formSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   email: z.string().email(),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  organizationName: z.string().optional(),
 });
 
 export default function SignupPage() {
@@ -44,6 +45,7 @@ export default function SignupPage() {
       fullName: '',
       email: '',
       password: '',
+      organizationName: '',
     },
   });
 
@@ -66,6 +68,7 @@ export default function SignupPage() {
           id: user.uid,
           name: values.fullName,
           email: values.email,
+          organizationName: values.organizationName || null,
           role: values.email === 'admin@adsparkx.com' ? 'Admin' : 'Viewer', // Set role to Admin for the admin email
           createdAt: new Date().toISOString(),
       });
@@ -166,6 +169,19 @@ export default function SignupPage() {
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="organizationName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. AdSparkx Inc." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

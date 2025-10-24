@@ -39,7 +39,7 @@ function Hero() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-headline font-extrabold tracking-tight">
-            Empower your Marketing with Advista by AdSparkx
+            Powering Smarter Ad Decisions
           </h1>
           <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-300">
             Your intelligent analytics companion for campaign optimization.
@@ -51,7 +51,7 @@ function Hero() {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="rounded-full font-semibold text-lg px-8 py-6 bg-transparent border-2 border-white text-white hover:bg-white hover:text-black w-full sm:w-auto">
-              <Link href="/login">Get Started</Link>
+              <Link href="/signup">Get Started</Link>
             </Button>
           </div>
         </div>
