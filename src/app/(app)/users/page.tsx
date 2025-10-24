@@ -19,6 +19,58 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { notFound } from 'next/navigation';
 
+function UsersPageSkeleton() {
+    return (
+        <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline tracking-tight">User Management</h1>
+                    <p className="text-muted-foreground">Manage users and their roles.</p>
+                </div>
+                <Button disabled>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add User
+                </Button>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Users</CardTitle>
+                    <CardDescription>Loading user information...</CardDescription>
+                </CardHeader>
+                <CardContent>
+                        <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead><span className="sr-only">Actions</span></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                                    <TableCell>
+                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 export default function UsersPage() {
     const firestore = useFirestore();
     const { user: authUser, isUserLoading } = useUser();
@@ -42,55 +94,7 @@ export default function UsersPage() {
     const isLoading = isUserLoading || isLoadingCurrentUser;
 
     if (isLoading) {
-        return (
-            <div className="space-y-6">
-                 <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold font-headline tracking-tight">User Management</h1>
-                        <p className="text-muted-foreground">Manage users and their roles.</p>
-                    </div>
-                    <Button disabled>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add User
-                    </Button>
-                </div>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>All Users</CardTitle>
-                        <CardDescription>Loading user information...</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead><span className="sr-only">Actions</span></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Skeleton className="h-10 w-10 rounded-full" />
-                                                <Skeleton className="h-4 w-24" />
-                                            </div>
-                                        </TableCell>
-                                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                                        <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
-                                        <TableCell>
-                                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
-        )
+        return <UsersPageSkeleton />;
     }
 
     if (!isAdmin) {

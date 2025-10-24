@@ -38,6 +38,65 @@ function AdminStatCard({
   );
 }
 
+function AdminPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-10 w-1/2" />
+        <Skeleton className="h-4 w-3/4 mt-2" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-1/2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+       <Card>
+        <CardHeader>
+          <CardTitle>All Campaigns</CardTitle>
+          <CardDescription>A list of all campaigns across the platform.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Campaign</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead className="text-right">Budget</TableHead>
+                <TableHead className="text-right">Revenue</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                  </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
@@ -51,19 +110,19 @@ export default function AdminDashboardPage() {
   const isAdmin = userProfile?.role === 'Admin';
 
   const adminDashboardRef = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
     return doc(firestore, 'admin_dashboard', 'data');
-  }, [firestore]);
+  }, [firestore, isAdmin]);
   const { data: adminData, isLoading: isLoadingAdminData } = useDoc<AdminDashboard>(adminDashboardRef);
 
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
+    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
     return collection(firestore, 'users');
   }, [firestore, isAdmin]);
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const allCampaignsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
+    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
     return collection(firestore, 'campaigns');
   }, [firestore, isAdmin]);
   const { data: allCampaigns, isLoading: isLoadingAllCampaigns } = useCollection<Campaign>(allCampaignsCollectionRef);
@@ -73,7 +132,7 @@ export default function AdminDashboardPage() {
   const isLoading = isUserLoading || isUserProfileLoading;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <AdminPageSkeleton />;
   }
   
   if (!isAdmin) {

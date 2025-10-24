@@ -3,12 +3,10 @@
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { doc } from "firebase/firestore";
-import type { User } from "@/lib/types";
 
 function AppLoading() {
   return (
@@ -44,15 +42,18 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect to login only after checking and finding no user.
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
+  // While loading, show a skeleton screen. This prevents flashes of content.
   if (isUserLoading || !user) {
     return <AppLoading />;
   }
 
+  // Once the user is loaded and exists, render the main layout.
   return (
     <SidebarProvider>
       <AppSidebar />
