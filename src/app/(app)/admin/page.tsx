@@ -1,7 +1,7 @@
 'use client';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
+
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Users, Server, Database } from 'lucide-react';
 import { User, Campaign, AdminDashboard } from '@/lib/types';
@@ -9,108 +9,32 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { doc } from 'firebase/firestore';
+import { AdminGuard } from '@/components/admin/admin-guard';
 
-function AdminPageSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-10 w-1/2" />
-        <Skeleton className="h-4 w-3/4 mt-2" />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-4" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-1/2" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-       <Card>
-        <CardHeader>
-          <CardTitle>All Campaigns</CardTitle>
-          <CardDescription>A list of all campaigns across the platform.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Campaign</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead className="text-right">Budget</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                  </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-
-export default function AdminDashboardPage() {
+function AdminDashboardContent() {
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<User>(userDocRef);
-
-  const isAdmin = userProfile?.role === 'Admin';
 
   const adminDashboardRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
+    if (!firestore) return null;
     return doc(firestore, 'admin_dashboard', 'data');
-  }, [firestore, isAdmin]);
+  }, [firestore]);
   const { data: adminData, isLoading: isLoadingAdminData } = useDoc<AdminDashboard>(adminDashboardRef);
 
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
+    if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore, isAdmin]);
+  }, [firestore]);
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const allCampaignsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null; // Fetch only if user is admin
+    if (!firestore) return null;
     return collection(firestore, 'campaigns');
-  }, [firestore, isAdmin]);
+  }, [firestore]);
   const { data: allCampaigns, isLoading: isLoadingAllCampaigns } = useCollection<Campaign>(allCampaignsCollectionRef);
 
   const activeCampaigns = allCampaigns?.filter(c => c.status === 'Active');
-
-  const isLoading = isUserLoading || isUserProfileLoading;
-
-  if (isLoading) {
-    return <AdminPageSkeleton />;
-  }
-  
-  if (!isLoading && !isAdmin) {
-      notFound();
-      return null;
-  }
 
   const systemHealthStats = [
     { title: 'Database Health', value: adminData?.databaseHealth || 'Online', icon: Database, isLoading: isLoadingAdminData },
@@ -221,4 +145,13 @@ export default function AdminDashboardPage() {
       </Card>
     </div>
   );
+}
+
+
+export default function AdminDashboardPage() {
+    return (
+        <AdminGuard>
+            <AdminDashboardContent />
+        </AdminGuard>
+    )
 }
