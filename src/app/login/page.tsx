@@ -58,7 +58,7 @@ export default function LoginPage() {
        toast({
         variant: "destructive",
         title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        description: error.code === 'auth/invalid-credential' ? 'Invalid email or password. Please try again.' : error.message,
       });
     }
   };

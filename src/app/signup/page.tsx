@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getFirestore, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,15 +54,6 @@ export default function SignupPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (values.email === 'admin@adsparkx.com') {
-      toast({
-        variant: "destructive",
-        title: "Cannot Create Admin",
-        description: "This email address is reserved. Please use a different email.",
-      });
-      return;
-    }
-
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -75,7 +66,7 @@ export default function SignupPage() {
           id: user.uid,
           name: values.fullName,
           email: values.email,
-          role: 'Viewer', // Default role for new signups
+          role: values.email === 'admin@adsparkx.com' ? 'Admin' : 'Viewer', // Set role to Admin for the admin email
           createdAt: new Date().toISOString(),
       });
       // The onAuthStateChanged listener will handle the redirect
