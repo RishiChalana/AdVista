@@ -56,7 +56,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     return <AdminGuardSkeleton />;
   }
 
-  // After loading, check if user exists and is an admin
+  // After all loading is complete, check if the user exists and is an admin
   if (!userProfile || userProfile.role !== 'Admin') {
     notFound();
     return null; // Render nothing while Next.js handles the 404

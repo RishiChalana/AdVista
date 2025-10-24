@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Users, Server, Database } from 'lucide-react';
@@ -14,6 +14,7 @@ import { AdminGuard } from '@/components/admin/admin-guard';
 
 function AdminDashboardContent() {
   const firestore = useFirestore();
+  const { user: authUser } = useUser();
 
   const adminDashboardRef = useMemoFirebase(() => {
     if (!firestore) return null;
