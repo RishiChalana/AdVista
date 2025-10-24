@@ -1,4 +1,5 @@
 'use client';
+
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { Campaign } from '@/lib/types';
 import { collection } from 'firebase/firestore';
@@ -13,7 +14,7 @@ export default function ReportsPage() {
   const campaignsCollection = useMemoFirebase(
     () => {
         if (!firestore || !user) return null;
-        return collection(firestore, 'campaigns')
+        return collection(firestore, 'campaigns');
     },
     [firestore, user]
   );
