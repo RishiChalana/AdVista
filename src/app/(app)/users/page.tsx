@@ -75,7 +75,6 @@ export default function UsersPage() {
     const firestore = useFirestore();
     const { user: authUser, isUserLoading } = useUser();
     
-    // Get current user's profile to check for admin role
     const currentUserDocRef = useMemoFirebase(() => {
         if (!firestore || !authUser) return null;
         return doc(firestore, 'users', authUser.uid);
@@ -84,7 +83,6 @@ export default function UsersPage() {
 
     const isAdmin = currentUser?.role === 'Admin';
 
-    // Get all users if current user is admin
     const usersCollectionRef = useMemoFirebase(() => {
         if (!firestore || !isAdmin) return null;
         return collection(firestore, 'users');
@@ -97,7 +95,7 @@ export default function UsersPage() {
         return <UsersPageSkeleton />;
     }
 
-    if (!isAdmin) {
+    if (!isLoading && !isAdmin) {
         notFound();
         return null;
     }

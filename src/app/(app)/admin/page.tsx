@@ -107,7 +107,7 @@ export default function AdminDashboardPage() {
     return <AdminPageSkeleton />;
   }
   
-  if (!isAdmin) {
+  if (!isLoading && !isAdmin) {
       notFound();
       return null;
   }
@@ -135,7 +135,15 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {systemHealthStats.map(stat => (
-          <AdminStatCard key={stat.title} {...stat} />
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {stat.isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-2xl font-bold">{stat.value}</div>}
+            </CardContent>
+          </Card>
         ))}
       </div>
       
