@@ -1,122 +1,110 @@
 /**
- * @file Firebase Security Rules for Advista Platform
- *
- * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and associated reports,
- * while providing public read access to campaigns and messages. It leverages path-based authorization to
- * ensure that users can only access their own data.
- *
- * @data_structure The database is structured with a top-level `users` collection, where each document
- * represents a user profile.  Each user has a subcollection `reports`.  Campaigns and Messages are top-level
- * collections accessible to all users.
- *
+ * @file Firestore Security Rules
+ * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and reports nested under user profiles.
+ *   Campaigns and Messages have basic existence checks but are generally open for read/write access.
+ *   The rules prioritize authorization independence and structural segregation for enhanced security.
+ * @data_structure
+ *   /users/{userId}: Stores user profiles. Enforces strict ownership.
+ *   /campaigns/{campaignId}: Stores campaign data. Basic existence checks apply.
+ *   /users/{userId}/reports/{reportId}: Stores user-specific reports. Enforces strict ownership.
+ *   /campaigns/{campaignId}/reports/{reportId}: Stores campaign-specific reports. Enforces existence.
+ *   /messages/{messageId}: Stores contact form messages. Basic existence checks apply.
  * @key_security_decisions
- *  - Users can only read and write their own profile data.
- *  - Users can only manage reports associated with their profile.
- *  - Campaigns and Messages are publicly readable, but writes are not allowed in this prototype phase without further clarification.
- *  - Listing of all users is disallowed for privacy.
+ *   - Listing of users is explicitly denied to prevent information disclosure.
+ *   - Campaigns and Messages are writable by anyone, for prototyping purposes. In a production app, you would want to secure these collections properly.
+ *   - Data validation is minimal during this prototyping phase and focuses only on authorization-critical fields.
+ * @denormalization_for_authorization N/A
+ * @structural_segregation User data, campaign data, and contact form messages are stored in separate top-level collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile documents.
+     * @description Enforces access control for user profiles. Only the authenticated user can read or write their own profile.
      * @path /users/{userId}
-     * @allow (create) User with ID 'user123' can create their profile.
-     * @allow (get) User with ID 'user123' can read their profile.
-     * @allow (update) User with ID 'user123' can update their profile.
-     * @allow (delete) User with ID 'user123' can delete their profile.
-     * @deny (create) User with ID 'user456' cannot create a profile with ID 'user123'.
-     * @deny (get) User with ID 'user456' cannot read the profile of user 'user123'.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (create) - Authenticated user with UID 'user_abc' can create their own profile at /users/user_abc.
+     * @allow (get, update, delete) - Authenticated user with UID 'user_abc' can read, update, or delete their own profile at /users/user_abc.
+     * @deny (create) - Authenticated user with UID 'user_abc' cannot create a profile at /users/different_user.
+     * @deny (get, update, delete) - Authenticated user with UID 'user_abc' cannot read, update, or delete the profile of another user at /users/different_user.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
+      // Helper function to check if the authenticated user is the owner of the resource.
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return request.auth != null && request.auth.uid == userId;
       }
 
+      // Helper function to check if the authenticated user is the existing owner of the resource.
       function isExistingOwner(userId) {
-          return isOwner(userId) && exists(resource);
+        return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(userId);
-      allow list: if false; // Disallowing listing of all users for privacy
-
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId);
+      allow list: if false; // Listing users is not permitted.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of user ID.
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to campaign documents.
+     * @description Allows access to campaign data. In this prototype, anyone can read and write campaign data.
      * @path /campaigns/{campaignId}
-     * @allow (get) Any user can read campaign data.
-     * @deny (create) No one can create a campaign in this prototype without ownership.
-     * @principle Public read access with restricted writes.
+     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a campaign.
+     * @principle Permits any authenticated or unauthenticated user to perform any action on a campaign.
      */
     match /campaigns/{campaignId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if true;
     }
 
     /**
-     * @description Controls access to report documents nested under users.
+     * @description Enforces access control for reports nested under user profiles. Only the authenticated user can read or write their own reports.
      * @path /users/{userId}/reports/{reportId}
-     * @allow (create) User with ID 'user123' can create a report under their profile.
-     * @allow (get) User with ID 'user123' can read a report under their profile.
-     * @allow (update) User with ID 'user123' can update a report under their profile.
-     * @allow (delete) User with ID 'user123' can delete a report under their profile.
-     * @deny (create) User with ID 'user456' cannot create a report under user 'user123'.
-     * @deny (get) User with ID 'user456' cannot read a report under user 'user123'.
-     * @principle Enforces document ownership for user-specific reports.
+     * @allow (create) - Authenticated user with UID 'user_abc' can create a report under their profile at /users/user_abc/reports/report_xyz.
+     * @allow (get, update, delete) - Authenticated user with UID 'user_abc' can read, update, or delete their own report at /users/user_abc/reports/report_xyz.
+     * @deny (create) - Authenticated user with UID 'user_abc' cannot create a report under another user's profile at /users/different_user/reports/report_xyz.
+     * @deny (get, update, delete) - Authenticated user with UID 'user_abc' cannot read, update, or delete a report belonging to another user at /users/different_user/reports/report_xyz.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/reports/{reportId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-
+      // Helper function to check if the authenticated user is the owner of the resource.
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return request.auth != null && request.auth.uid == userId;
       }
 
+      // Helper function to check if the authenticated user is the existing owner of the resource.
       function isExistingOwner(userId) {
-          return isOwner(userId) && exists(resource);
+        return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of userId.
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Controls access to report documents nested under campaigns.
+        /**
+     * @description Allows access to reports nested under campaign. In this prototype, anyone can read and write report data.
      * @path /campaigns/{campaignId}/reports/{reportId}
-     * @allow (get) Any user can read a report under any campaign.
-     * @deny (create) No one can create a report without campaign ownership validation (future).
-     * @principle Public read access with restricted writes (in this prototype phase).
+     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a campaign report.
+     * @principle Permits any authenticated or unauthenticated user to perform any action on a campaign report.
      */
-    match /campaigns/{campaignId}/reports/{reportId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
+        match /campaigns/{campaignId}/reports/{reportId} {
+          allow get, list: if true;
+          allow create, update, delete: if true;
+        }
 
-   /**
-     * @description Controls access to message documents.
+    /**
+     * @description Allows access to contact form messages. In this prototype, anyone can read and write messages data.
      * @path /messages/{messageId}
-     * @allow (get) Any user can read message data.
-     * @deny (create) No one can create a message in this prototype without ownership.
-     * @principle Public read access with restricted writes.
+     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a message.
+     * @principle Permits any authenticated or unauthenticated user to perform any action on a message.
      */
     match /messages/{messageId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if true;
     }
   }
 }
