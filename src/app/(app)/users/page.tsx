@@ -119,7 +119,6 @@ function UsersPageContent() {
   );
 }
 
-
 export default function UsersPage() {
     return (
         <AdminGuard>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Users, Server, Database } from 'lucide-react';
 import { User, Campaign, AdminDashboard } from '@/lib/types';
@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
 import { AdminGuard } from '@/components/admin/admin-guard';
 
 function AdminDashboardContent() {
@@ -146,7 +145,6 @@ function AdminDashboardContent() {
     </div>
   );
 }
-
 
 export default function AdminDashboardPage() {
     return (
