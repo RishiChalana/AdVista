@@ -1,0 +1,122 @@
+/**
+ * @file Firebase Security Rules for Advista Platform
+ *
+ * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and associated reports,
+ * while providing public read access to campaigns and messages. It leverages path-based authorization to
+ * ensure that users can only access their own data.
+ *
+ * @data_structure The database is structured with a top-level `users` collection, where each document
+ * represents a user profile.  Each user has a subcollection `reports`.  Campaigns and Messages are top-level
+ * collections accessible to all users.
+ *
+ * @key_security_decisions
+ *  - Users can only read and write their own profile data.
+ *  - Users can only manage reports associated with their profile.
+ *  - Campaigns and Messages are publicly readable, but writes are not allowed in this prototype phase without further clarification.
+ *  - Listing of all users is disallowed for privacy.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' can create their profile.
+     * @allow (get) User with ID 'user123' can read their profile.
+     * @allow (update) User with ID 'user123' can update their profile.
+     * @allow (delete) User with ID 'user123' can delete their profile.
+     * @deny (create) User with ID 'user456' cannot create a profile with ID 'user123'.
+     * @deny (get) User with ID 'user456' cannot read the profile of user 'user123'.
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && exists(resource);
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallowing listing of all users for privacy
+
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to campaign documents.
+     * @path /campaigns/{campaignId}
+     * @allow (get) Any user can read campaign data.
+     * @deny (create) No one can create a campaign in this prototype without ownership.
+     * @principle Public read access with restricted writes.
+     */
+    match /campaigns/{campaignId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    /**
+     * @description Controls access to report documents nested under users.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (create) User with ID 'user123' can create a report under their profile.
+     * @allow (get) User with ID 'user123' can read a report under their profile.
+     * @allow (update) User with ID 'user123' can update a report under their profile.
+     * @allow (delete) User with ID 'user123' can delete a report under their profile.
+     * @deny (create) User with ID 'user456' cannot create a report under user 'user123'.
+     * @deny (get) User with ID 'user456' cannot read a report under user 'user123'.
+     * @principle Enforces document ownership for user-specific reports.
+     */
+    match /users/{userId}/reports/{reportId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && exists(resource);
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to report documents nested under campaigns.
+     * @path /campaigns/{campaignId}/reports/{reportId}
+     * @allow (get) Any user can read a report under any campaign.
+     * @deny (create) No one can create a report without campaign ownership validation (future).
+     * @principle Public read access with restricted writes (in this prototype phase).
+     */
+    match /campaigns/{campaignId}/reports/{reportId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+   /**
+     * @description Controls access to message documents.
+     * @path /messages/{messageId}
+     * @allow (get) Any user can read message data.
+     * @deny (create) No one can create a message in this prototype without ownership.
+     * @principle Public read access with restricted writes.
+     */
+    match /messages/{messageId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+  }
+}
