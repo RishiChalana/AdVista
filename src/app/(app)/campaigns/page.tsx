@@ -35,10 +35,15 @@ export default function CampaignsPage() {
   }
 
   const handleExport = () => {
-    if (campaigns) {
-      const csv = Papa.unparse(campaigns);
+    if (campaigns && campaigns.length > 0) {
+      // We don't want to include the raw user ID in the export
+      const exportData = campaigns.map(({ userId, ...rest }) => rest);
+      const csv = Papa.unparse(exportData);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
+      if (link.href) {
+        URL.revokeObjectURL(link.href);
+      }
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
       link.setAttribute('download', 'campaigns.csv');
@@ -66,7 +71,7 @@ export default function CampaignsPage() {
           </TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" variant="outline" className="h-10 gap-1" onClick={handleExport}>
+          <Button size="sm" variant="outline" className="h-10 gap-1" onClick={handleExport} disabled={!campaigns || campaigns.length === 0}>
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Export
