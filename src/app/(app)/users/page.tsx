@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,11 @@ import {
 
 export default function UsersPage() {
     const firestore = useFirestore();
-    const usersCollection = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
+    const { user: authUser } = useUser();
+    const usersCollection = useMemoFirebase(() => {
+        if (!firestore || !authUser) return null;
+        return collection(firestore, 'users');
+    }, [firestore, authUser]);
     const { data: users, isLoading } = useCollection<User>(usersCollection);
 
     if (isLoading) {
@@ -60,7 +64,7 @@ export default function UsersPage() {
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{user.name}</span>
                     </div>

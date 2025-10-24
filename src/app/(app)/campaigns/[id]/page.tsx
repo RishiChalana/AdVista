@@ -1,5 +1,5 @@
 'use client';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -11,9 +11,13 @@ import { Campaign } from '@/lib/types';
 
 export default function CampaignDetailPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const campaignRef = useMemoFirebase(
-    () => doc(firestore, 'campaigns', params.id),
-    [firestore, params.id]
+    () => {
+      if (!firestore || !user) return null;
+      return doc(firestore, 'campaigns', params.id);
+    },
+    [firestore, params.id, user]
   );
   const { data: campaign, isLoading } = useDoc<Campaign>(campaignRef);
 
@@ -22,7 +26,12 @@ export default function CampaignDetailPage({ params }: { params: { id: string } 
   }
 
   if (!campaign) {
-    notFound();
+    // This can happen briefly during loading or if doc doesn't exist.
+    // Let's show a targeted loading message or handle not found after loading is truly done.
+    if (!isLoading) {
+      notFound();
+    }
+    return <div>Loading campaign details...</div>;
   }
   
   const kpis = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { DataTable } from '@/components/campaigns/data-table';
 import { columns } from '@/components/campaigns/columns';
@@ -16,10 +16,14 @@ import { Campaign } from '@/lib/types';
 
 export default function CampaignsPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   
   const campaignsCollection = useMemoFirebase(
-    () => collection(firestore, 'campaigns'),
-    [firestore]
+    () => {
+        if (!firestore || !user) return null;
+        return collection(firestore, 'campaigns')
+    },
+    [firestore, user]
   );
   const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
 

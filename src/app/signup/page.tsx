@@ -1,9 +1,21 @@
+'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Bot } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useAuth, useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 48 48">
@@ -14,7 +26,97 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
   );
 
+const formSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
 export default function SignupPage() {
+  const auth = useAuth();
+  const firestore = getFirestore();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+    },
+  });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
+      
+      if (auth.currentUser) {
+          await updateProfile(auth.currentUser, {
+              displayName: values.fullName
+          });
+      
+          // Now create user document in Firestore
+          const userRef = doc(firestore, 'users', auth.currentUser.uid);
+          await setDoc(userRef, {
+              id: auth.currentUser.uid,
+              name: values.fullName,
+              email: values.email,
+              role: 'Viewer', // Default role
+              createdAt: new Date().toISOString(),
+          });
+      }
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Sign Up Failed",
+            description: error.message || "An unexpected error occurred.",
+        });
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+       // Create user document in Firestore
+      const userRef = doc(firestore, 'users', user.uid);
+      await setDoc(userRef, {
+          id: user.uid,
+          name: user.displayName,
+          email: user.email,
+          role: 'Viewer', // Default role
+          createdAt: new Date().toISOString(),
+          avatar: user.photoURL
+      }, { merge: true }); // Merge to not overwrite if exists
+
+    } catch (error) {
+      console.error("Google sign-in error", error);
+      toast({
+        variant: "destructive",
+        title: "Google Sign-In Failed",
+        description: "Could not sign in with Google. Please try again.",
+      });
+    }
+  };
+
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
@@ -30,27 +132,66 @@ export default function SignupPage() {
             <CardDescription>Enter your information to get started</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="full-name">Full Name</Label>
-                <Input id="full-name" placeholder="John Doe" required />
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="m@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                   {form.formState.isSubmitting ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </form>
+            </Form>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="m@example.com" required />
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full" asChild>
-                <Link href="/dashboard">Create Account</Link>
-              </Button>
-               <Button variant="outline" className="w-full">
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Sign up with Google
-              </Button>
             </div>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Sign up with Google
+            </Button>
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
               <Link href="/login" className="underline">
