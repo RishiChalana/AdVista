@@ -1,9 +1,24 @@
+'use client';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { Campaign } from '@/lib/types';
+import { collection } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download } from "lucide-react";
 
 export default function ReportsPage() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const campaignsCollection = useMemoFirebase(
+    () => {
+        if (!firestore || !user) return null;
+        return collection(firestore, 'campaigns')
+    },
+    [firestore, user]
+  );
+  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
+
   return (
     <div className="space-y-6">
       <div>
@@ -29,21 +44,22 @@ export default function ReportsPage() {
                         <SelectItem value="all-time">All time</SelectItem>
                     </SelectContent>
                 </Select>
-                 <Select>
+                 <Select disabled={isLoading}>
                     <SelectTrigger>
                         <SelectValue placeholder="Select campaign" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Campaigns</SelectItem>
-                        <SelectItem value="101">Summer Sale Meta Ads</SelectItem>
-                        <SelectItem value="102">Q4 Google Search</SelectItem>
+                        {campaigns?.map(campaign => (
+                            <SelectItem key={campaign.id} value={campaign.id}>{campaign.name}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
              <Select>
                 <SelectTrigger>
                     <SelectValue placeholder="Select format" />
-                </SelectTrigger>
+                </Trigger>
                 <SelectContent>
                     <SelectItem value="pdf">PDF</SelectItem>
                     <SelectItem value="csv">CSV</SelectItem>
@@ -51,7 +67,7 @@ export default function ReportsPage() {
             </Select>
             <Button className="w-full">
                 <Download className="mr-2 h-4 w-4"/>
-                Generate and Download
+                <span className="sr-only sm:not-sr-only">Generate and </span>Download
             </Button>
         </CardContent>
       </Card>

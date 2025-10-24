@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2, Sparkles } from 'lucide-react';
-import { getCampaignInsightsAction } from './actions';
+import { getCampaignInsightsAction } from '@/app/(app)/campaigns/[id]/actions';
 import type { Campaign } from '@/lib/types';
 import type { GenerateCampaignInsightsOutput } from '@/ai/flows/generate-campaign-insights';
 import { useToast } from '@/hooks/use-toast';
