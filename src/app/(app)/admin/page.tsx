@@ -1,5 +1,5 @@
 'use client';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -39,59 +39,47 @@ function AdminStatCard({
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [activeCampaigns, setActiveCampaigns] = useState(0);
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<User>(userDocRef);
 
   const adminDashboardRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'admin_dashboard', 'data');
   }, [firestore]);
-
   const { data: adminData, isLoading: isLoadingAdminData } = useDoc<AdminDashboard>(adminDashboardRef);
 
-  useEffect(() => {
-    const checkAdminAndFetchData = async () => {
-      if (user && firestore) {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const { data: userProfile } = await new Promise<any>((resolve) => {
-            const {data} = useDoc<User>(userDocRef);
-            resolve({data})
-        });
+  const usersCollectionRef = useMemoFirebase(() => {
+    if (!firestore || userProfile?.role !== 'Admin') return null;
+    return collection(firestore, 'users');
+  }, [firestore, userProfile]);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-        if (userProfile?.role === 'Admin') {
-          setIsAdmin(true);
-          // Fetch total users
-          const usersCollection = collection(firestore, 'users');
-          const usersSnapshot = await getDocs(usersCollection);
-          setTotalUsers(usersSnapshot.size);
+  const activeCampaignsCollectionRef = useMemoFirebase(() => {
+    if (!firestore || userProfile?.role !== 'Admin') return null;
+    return query(collection(firestore, 'campaigns'), where('status', '==', 'Active'));
+  }, [firestore, userProfile]);
+  const { data: activeCampaigns, isLoading: isLoadingActiveCampaigns } = useCollection<Campaign>(activeCampaignsCollectionRef);
 
-          // Fetch active campaigns
-          const campaignsCollection = collection(firestore, 'campaigns');
-          const activeCampaignsQuery = query(campaignsCollection, where('status', '==', 'Active'));
-          const activeCampaignsSnapshot = await getDocs(activeCampaignsQuery);
-          setActiveCampaigns(activeCampaignsSnapshot.size);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-    };
-    checkAdminAndFetchData();
-  }, [user, firestore]);
-  
-  if (isUserLoading) {
+  const isLoading = isUserLoading || isUserProfileLoading;
+
+  if (isLoading) {
     return <div>Loading...</div>;
   }
   
-  if (!isAdmin) {
+  if (userProfile?.role !== 'Admin') {
       notFound();
+      return null;
   }
 
   const systemHealthStats = [
-    { title: 'Database Health', value: adminData?.databaseHealth || 'Checking...', icon: Database, isLoading: isLoadingAdminData },
-    { title: 'Server Health', value: adminData?.serverHealth || 'Checking...', icon: Server, isLoading: isLoadingAdminData },
-    { title: 'Total Users', value: totalUsers, icon: Users, isLoading: isLoadingAdminData },
-    { title: 'Active Campaigns', value: activeCampaigns, icon: BarChart, isLoading: isLoadingAdminData },
+    { title: 'Database Health', value: adminData?.databaseHealth || 'Online', icon: Database, isLoading: isLoadingAdminData },
+    { title: 'Server Health', value: adminData?.serverHealth || 'Online', icon: Server, isLoading: isLoadingAdminData },
+    { title: 'Total Users', value: users?.length ?? 0, icon: Users, isLoading: isLoadingUsers },
+    { title: 'Active Campaigns', value: activeCampaigns?.length ?? 0, icon: BarChart, isLoading: isLoadingActiveCampaigns },
   ];
 
   return (
@@ -123,7 +111,7 @@ export default function AdminDashboardPage() {
             ) : (
                 <pre className="p-4 bg-muted rounded-md text-sm text-muted-foreground overflow-x-auto">
                     <code>
-                        {adminData?.systemLogs?.join('\n')}
+                        {adminData?.systemLogs?.join('\n') || 'No system logs available.'}
                     </code>
                 </pre>
             )}

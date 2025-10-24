@@ -32,12 +32,12 @@ export default function UsersPage() {
 
     // Get all users if current user is admin
     const usersCollectionRef = useMemoFirebase(() => {
-        if (!firestore || currentUser?.role !== 'Admin') return null;
+        if (!firestore || !currentUser || currentUser.role !== 'Admin') return null;
         return collection(firestore, 'users');
     }, [firestore, currentUser]);
     const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
     
-    const isLoading = isUserLoading || isLoadingCurrentUser || (currentUser?.role === 'Admin' && isLoadingUsers);
+    const isLoading = isUserLoading || isLoadingCurrentUser;
 
     if (isLoading) {
         return (
@@ -126,7 +126,23 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users && users.length > 0 ? (
+              {isLoadingUsers ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        </TableCell>
+                        <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                        <TableCell>
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                    </TableRow>
+                ))
+              ) : users && users.length > 0 ? (
                 users.map(user => (
                     <TableRow key={user.id}>
                     <TableCell>
