@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type Campaign = {
   id: string;
   name: string;
@@ -35,3 +37,26 @@ export type AdminDashboard = {
     activeCampaigns: number;
     systemLogs: string[];
 };
+
+// Schema for the AI suggestion generator
+const CampaignSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  platform: z.string(),
+  budget: z.number(),
+  impressions: z.number(),
+  clicks: z.number(),
+  conversions: z.number(),
+  revenue: z.number(),
+  status: z.string(),
+});
+
+export const GenerateReportSuggestionsInputSchema = z.object({
+  campaigns: z.array(CampaignSchema).describe("List of all campaigns to analyze."),
+});
+export type GenerateReportSuggestionsInput = z.infer<typeof GenerateReportSuggestionsInputSchema>;
+
+export const GenerateReportSuggestionsOutputSchema = z.object({
+  suggestion: z.string().describe('A concise suggestion on which campaigns to prioritize, pause, or remove based on performance data like ROI, revenue, and conversions.'),
+});
+export type GenerateReportSuggestionsOutput = z.infer<typeof GenerateReportSuggestionsOutputSchema>;
