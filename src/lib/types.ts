@@ -20,6 +20,7 @@ export type User = {
   name: string;
   email: string;
   role: 'Admin' | 'Analyst' | 'Viewer';
+  is_active: boolean;
   avatar?: string;
   organizationName?: string;
   createdAt: string;

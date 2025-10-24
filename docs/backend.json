@@ -27,6 +27,10 @@
           "type": "string",
           "description": "User's role (Admin, Analyst, Viewer)."
         },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether the user account is active."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp of when the user was created.",
@@ -38,6 +42,7 @@
         "name",
         "email",
         "role",
+        "is_active",
         "createdAt"
       ]
     },

@@ -12,7 +12,7 @@ function Header() {
           <Link href="/" className="flex items-center gap-2">
             <Bot className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold font-headline text-white">
-              Advista
+              AdVista
             </span>
           </Link>
           <nav className="hidden space-x-4 md:flex">
@@ -116,7 +116,7 @@ function Footer() {
                     <div className="flex items-center gap-2">
                         <Bot className="h-6 w-6 text-primary" />
                         <span className="text-md font-bold font-headline">
-                            Advista
+                            AdVista
                         </span>
                     </div>
                     <div className="flex flex-wrap justify-center md:justify-start gap-x-6 gap-y-2 mt-4 md:mt-0">

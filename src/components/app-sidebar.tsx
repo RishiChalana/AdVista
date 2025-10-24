@@ -49,7 +49,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2">
             <Bot className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-bold font-headline text-primary group-data-[collapsible=icon]:hidden">Advista</h1>
+            <h1 className="text-xl font-bold font-headline text-primary group-data-[collapsible=icon]:hidden">AdVista</h1>
         </Link>
       </SidebarHeader>
       <SidebarContent>

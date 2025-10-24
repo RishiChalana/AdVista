@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Advista by AdSparkx',
+  title: 'AdVista by AdSparkx',
   description: 'Your intelligent analytics companion for campaign optimization.',
 };
 
