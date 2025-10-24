@@ -11,8 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,7 +26,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const formSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(1, "Password is required."),
 });
 
 export default function LoginPage() {
@@ -50,8 +49,18 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    initiateEmailSignIn(auth, values.email, values.password);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The onAuthStateChanged listener in the provider will handle the redirect
+    } catch (error: any) {
+      console.error("Login error", error);
+       toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
+      });
+    }
   };
 
   const handleGoogleSignIn = async () => {

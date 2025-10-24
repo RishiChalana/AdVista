@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getFirestore } from 'firebase/firestore';
+import { doc, setDoc, getFirestore, serverTimestamp } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -54,38 +54,31 @@ export default function SignupPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (values.email === 'admin@adsparkx.com') {
+      toast({
+        variant: "destructive",
+        title: "Cannot Create Admin",
+        description: "This email address is reserved. Please use a different email.",
+      });
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      
       const user = userCredential.user;
       await updateProfile(user, {
           displayName: values.fullName
       });
       
-      const role = values.email === 'admin@adsparkx.com' ? 'Admin' : 'Viewer';
-
-      // Now create user document in Firestore
       const userRef = doc(firestore, 'users', user.uid);
       await setDoc(userRef, {
           id: user.uid,
           name: values.fullName,
           email: values.email,
-          role: role,
+          role: 'Viewer', // Default role for new signups
           createdAt: new Date().toISOString(),
       });
-
-      // Special case for admin to create admin dashboard data
-      if (role === 'Admin') {
-        const adminDashboardRef = doc(firestore, 'admin_dashboard', 'data');
-        await setDoc(adminDashboardRef, {
-            id: 'data',
-            databaseHealth: 'Online',
-            serverHealth: 'Online',
-            totalUsers: 1,
-            activeCampaigns: 0,
-            systemLogs: [`Admin user ${values.email} created at ${new Date().toISOString()}`]
-        }, { merge: true });
-      }
+      // The onAuthStateChanged listener will handle the redirect
 
     } catch (error: any) {
         toast({

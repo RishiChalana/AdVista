@@ -1,29 +1,37 @@
 'use client';
 import {
-  Auth, // Import Auth type for type hinting
+  Auth,
   signInAnonymously,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  // Assume getAuth and app are initialized elsewhere
+  UserCredential,
 } from 'firebase/auth';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 /** Initiate anonymous sign-in (non-blocking). */
 export function initiateAnonymousSignIn(authInstance: Auth): void {
-  // CRITICAL: Call signInAnonymously directly. Do NOT use 'await signInAnonymously(...)'.
-  signInAnonymously(authInstance);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+  signInAnonymously(authInstance).catch(error => {
+    // Although auth errors aren't FirestorePermissionError, we can log them
+    // or handle them in a specific way if needed. For now, console.error is fine.
+    console.error("Anonymous sign-in error:", error);
+  });
 }
 
 /** Initiate email/password sign-up (non-blocking). */
-export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): void {
-  // CRITICAL: Call createUserWithEmailAndPassword directly. Do NOT use 'await createUserWithEmailAndPassword(...)'.
-  createUserWithEmailAndPassword(authInstance, email, password);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+export function initiateEmailSignUp(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
+  const promise = createUserWithEmailAndPassword(authInstance, email, password);
+  promise.catch(error => {
+    console.error("Email sign-up error:", error);
+  });
+  return promise;
 }
 
 /** Initiate email/password sign-in (non-blocking). */
-export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): void {
-  // CRITICAL: Call signInWithEmailAndPassword directly. Do NOT use 'await signInWithEmailAndPassword(...)'.
-  signInWithEmailAndPassword(authInstance, email, password);
-  // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
+export function initiateEmailSignIn(authInstance: Auth, email: string, password: string): Promise<UserCredential> {
+  const promise = signInWithEmailAndPassword(authInstance, email, password);
+  promise.catch(error => {
+    console.error("Email sign-in error:", error);
+  });
+  return promise;
 }
