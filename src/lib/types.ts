@@ -8,7 +8,7 @@ export type Campaign = {
   conversions: number;
   revenue: number;
   status: 'Active' | 'Paused' | 'Ended';
-  roi: number;
+  roi?: number;
 };
 
 export type User = {
@@ -16,5 +16,5 @@ export type User = {
   name: string;
   email: string;
   role: 'Admin' | 'Analyst' | 'Viewer';
-  avatar: string;
+  avatar?: string;
 };

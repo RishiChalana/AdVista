@@ -13,6 +13,51 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Campaign } from '@/lib/types';
 import Link from 'next/link';
+import { deleteDoc, doc, getFirestore } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
+
+function CampaignActions({ campaign }: { campaign: Campaign }) {
+  const { toast } = useToast();
+  const firestore = getFirestore();
+  const { user } = useUser();
+
+  const handleDelete = async () => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to delete a campaign.' });
+        return;
+    }
+    if (window.confirm(`Are you sure you want to delete the campaign "${campaign.name}"?`)) {
+      try {
+        await deleteDoc(doc(firestore, 'campaigns', campaign.id));
+        toast({ title: 'Campaign Deleted', description: `"${campaign.name}" has been deleted.` });
+      } catch (error) {
+        console.error("Error deleting campaign:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not delete campaign.' });
+      }
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem asChild>
+          <Link href={`/campaigns/${campaign.id}`}>View details</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled>Edit Campaign</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDelete} className="text-destructive">Delete Campaign</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 
 export const columns: ColumnDef<Campaign>[] = [
   {
@@ -82,34 +127,15 @@ export const columns: ColumnDef<Campaign>[] = [
     accessorKey: 'roi',
     header: () => <div className="text-right">ROI %</div>,
     cell: ({ row }) => {
-        const roi = parseFloat(row.getValue('roi'));
+        const budget = row.original.budget;
+        const revenue = row.original.revenue;
+        const roi = budget > 0 ? ((revenue - budget) / budget) * 100 : 0;
         const isPositive = roi >= 0;
-        return <div className={`text-right font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>{roi}%</div>
+        return <div className={`text-right font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}>{roi.toFixed(2)}%</div>
     }
   },
   {
     id: 'actions',
-    cell: ({ row }) => {
-      const campaign = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href={`/campaigns/${campaign.id}`}>View details</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>Edit Campaign</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Delete Campaign</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => <CampaignActions campaign={row.original} />,
   },
 ];

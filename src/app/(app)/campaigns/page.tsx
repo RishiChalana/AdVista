@@ -13,6 +13,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Campaign } from '@/lib/types';
+import { AddCampaignDialog } from '@/components/campaigns/add-campaign-dialog';
 
 export default function CampaignsPage() {
   const firestore = useFirestore();
@@ -54,12 +55,7 @@ export default function CampaignsPage() {
               Export
             </span>
           </Button>
-          <Button size="sm" className="h-10 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              Add Campaign
-            </span>
-          </Button>
+          <AddCampaignDialog />
         </div>
       </div>
       <TabsContent value="all">
