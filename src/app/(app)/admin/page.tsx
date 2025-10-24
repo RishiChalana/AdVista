@@ -10,34 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-function AdminStatCard({
-  title,
-  value,
-  icon: Icon,
-  isLoading,
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  isLoading: boolean;
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <Skeleton className="h-8 w-1/2" />
-        ) : (
-          <div className="text-2xl font-bold">{value}</div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 function AdminPageSkeleton() {
   return (
     <div className="space-y-6">
