@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export type Campaign = {
   id: string;
+  userId: string;
   name: string;
   platform: 'Google Ads' | 'Meta' | 'Twitter' | 'LinkedIn';
   budget: number;
@@ -10,6 +11,7 @@ export type Campaign = {
   conversions: number;
   revenue: number;
   status: 'Active' | 'Paused' | 'Ended';
+  createdAt: string;
   roi?: number;
 };
 
@@ -17,8 +19,10 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Analyst' | 'Viewer';
+  role: 'Analyst' | 'Viewer';
+  is_active: boolean;
   avatar?: string;
+  organizationName?: string;
   createdAt: string;
 };
 
@@ -27,15 +31,6 @@ export type Report = {
   userId: string;
   generatedAt: string;
   campaignIds: string[];
-};
-
-export type AdminDashboard = {
-    id: string;
-    databaseHealth: string;
-    serverHealth: string;
-    totalUsers: number;
-    activeCampaigns: number;
-    systemLogs: string[];
 };
 
 // Schema for the AI suggestion generator
@@ -60,3 +55,5 @@ export const GenerateReportSuggestionsOutputSchema = z.object({
   suggestion: z.string().describe('A concise suggestion on which campaigns to prioritize, pause, or remove based on performance data like ROI, revenue, and conversions.'),
 });
 export type GenerateReportSuggestionsOutput = z.infer<typeof GenerateReportSuggestionsOutputSchema>;
+
+    

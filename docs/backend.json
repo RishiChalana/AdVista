@@ -21,7 +21,11 @@
         },
         "role": {
           "type": "string",
-          "description": "User's role (Admin, Analyst, Viewer)."
+          "description": "User's role (Analyst, Viewer)."
+        },
+        "is_active": {
+          "type": "boolean",
+          "description": "Whether the user account is active."
         },
         "createdAt": {
           "type": "string",
@@ -34,6 +38,7 @@
         "name",
         "email",
         "role",
+        "is_active",
         "createdAt"
       ]
     },
@@ -46,6 +51,10 @@
         "id": {
           "type": "string",
           "description": "Unique identifier for the campaign entity."
+        },
+        "userId": {
+            "type": "string",
+            "description": "The ID of the user who owns this campaign."
         },
         "name": {
           "type": "string",
@@ -78,10 +87,16 @@
         "status": {
           "type": "string",
           "description": "Campaign status (Active, Paused)."
+        },
+        "createdAt": {
+            "type": "string",
+            "description": "Timestamp of when the campaign was created.",
+            "format": "date-time"
         }
       },
       "required": [
         "id",
+        "userId",
         "name",
         "platform",
         "budget",
@@ -89,7 +104,8 @@
         "clicks",
         "conversions",
         "revenue",
-        "status"
+        "status",
+        "createdAt"
       ]
     },
     "Report": {
@@ -164,49 +180,6 @@
         "email",
         "message",
         "createdAt"
-      ]
-    },
-    "AdminDashboard": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminDashboard",
-      "type": "object",
-      "description": "Represents the admin dashboard, containing system health and configuration data.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the admin dashboard entity."
-        },
-        "databaseHealth": {
-          "type": "string",
-          "description": "Status of the database (e.g., 'Online', 'Offline', 'Degraded')."
-        },
-        "serverHealth": {
-          "type": "string",
-          "description": "Status of the backend servers (e.g., 'Online', 'Overloaded')."
-        },
-        "totalUsers": {
-          "type": "number",
-          "description": "Total number of registered users."
-        },
-        "activeCampaigns": {
-          "type": "number",
-          "description": "Number of currently active campaigns."
-        },
-        "systemLogs": {
-          "type": "array",
-          "description": "Array of system log entries.",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "databaseHealth",
-        "serverHealth",
-        "totalUsers",
-        "activeCampaigns",
-        "systemLogs"
       ]
     }
   },
@@ -285,34 +258,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/admin_dashboard/data",
-        "definition": {
-          "entityName": "AdminDashboard",
-          "schema": {
-            "$ref": "#/backend/entities/AdminDashboard"
-          },
-          "description": "Singleton document storing admin dashboard information."
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "admin",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Collection used to mark specific users as admins. Document existence determines admin status. Includes 'userId' as a parameter.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the admin user."
-            }
-          ]
-        }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability, adhering to the specified principles. User data is stored in `/users/{userId}`. Campaigns are stored in a top-level `/campaigns` collection. Reports are nested under each user at `/users/{userId}/reports/{reportId}` to establish clear ownership. Messages (contact form submissions) are stored in a top-level `/messages` collection. Admin dashboard data, which includes system health and user count, is stored in a singleton document at `/admin_dashboard/data`.\n\n**Authorization Independence:**  Ownership is enforced through path-based rules for user-owned data (reports under users). No `get()` calls are needed to validate ownership.\n\n**Structural Segregation:**  Data with different access requirements are segregated. User data and reports are kept separate from global entities like campaigns and contact messages. The admin dashboard is a singleton document for centralized admin data. \n\n**QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. Listing reports is scoped to the user, preventing unauthorized access to other users' reports. The Campaigns collection can be secured via a 'members' map containing those who can view/edit campaigns.\n\n**Admin Role:** The existence of an admin user is checked via `/roles_admin/{uid}` collection, where documents exist only for admin users."
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User data is stored in `/users/{userId}`. Campaigns are stored in a top-level `/campaigns` collection and are linked to a user via a `userId` field. Reports are nested under each user at `/users/{userId}/reports/{reportId}` to establish clear ownership. Messages (contact form submissions) are stored in a top-level `/messages` collection. This setup facilitates secure data access where users can only access their own data."
   }
 }

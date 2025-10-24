@@ -35,6 +35,7 @@ import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, getFirestore } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 
 const campaignSchema = z.object({
   name: z.string().min(1, 'Campaign name is required.'),
@@ -47,6 +48,7 @@ export function AddCampaignDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const firestore = getFirestore();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof campaignSchema>>({
     resolver: zodResolver(campaignSchema),
@@ -58,6 +60,7 @@ export function AddCampaignDialog() {
     },
   });
 
+<<<<<<< HEAD
   const onSubmit = async (values: z.infer<typeof campaignSchema>) => {
     try {
       const campaignsCollection = collection(firestore, 'campaigns');
@@ -82,7 +85,34 @@ export function AddCampaignDialog() {
         title: 'Error',
         description: error.message || 'There was a problem creating your campaign.',
       });
+=======
+  const onSubmit = (values: z.infer<typeof campaignSchema>) => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to create a campaign."
+        });
+        return;
+>>>>>>> a18fffffb48367627e302c59562c754bc65403b1
     }
+    const campaignsCollection = collection(firestore, 'campaigns');
+    addDocumentNonBlocking(campaignsCollection, {
+      ...values,
+      userId: user.uid,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      revenue: 0,
+      roi: 0,
+      createdAt: new Date().toISOString(),
+    });
+    toast({
+      title: 'Campaign Created',
+      description: `The campaign "${values.name}" has been successfully created.`,
+    });
+    form.reset();
+    setOpen(false);
   };
 
   return (
@@ -186,3 +216,5 @@ export function AddCampaignDialog() {
     </Dialog>
   );
 }
+
+    

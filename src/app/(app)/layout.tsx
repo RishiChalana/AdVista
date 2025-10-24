@@ -42,15 +42,18 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect to login only after checking and finding no user.
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
+  // While loading, show a skeleton screen. This prevents flashes of content.
   if (isUserLoading || !user) {
     return <AppLoading />;
   }
 
+  // Once the user is loaded and exists, render the main layout.
   return (
     <SidebarProvider>
       <AppSidebar />

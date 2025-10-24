@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ListFilter } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Campaign } from '@/lib/types';
 import { useMemo } from 'react';
 
@@ -21,7 +21,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const campaignsCollection = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'campaigns')
+    return query(collection(firestore, 'campaigns'), where('userId', '==', user.uid));
   }, [firestore, user]);
   const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
 
