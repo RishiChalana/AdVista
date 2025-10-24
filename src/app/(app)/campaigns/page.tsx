@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tabs"
 import { Campaign } from '@/lib/types';
 import { AddCampaignDialog } from '@/components/campaigns/add-campaign-dialog';
+import Papa from 'papaparse';
 
 export default function CampaignsPage() {
   const firestore = useFirestore();
@@ -33,6 +34,21 @@ export default function CampaignsPage() {
     return <div>Loading campaigns...</div>
   }
 
+  const handleExport = () => {
+    if (campaigns) {
+      const csv = Papa.unparse(campaigns);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'campaigns.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   const activeCampaigns = campaigns?.filter(c => c.status === 'Active') || [];
   const pausedCampaigns = campaigns?.filter(c => c.status === 'Paused') || [];
   const endedCampaigns = campaigns?.filter(c => c.status === 'Ended') || [];
@@ -50,7 +66,7 @@ export default function CampaignsPage() {
           </TabsTrigger>
         </TabsList>
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" variant="outline" className="h-10 gap-1">
+          <Button size="sm" variant="outline" className="h-10 gap-1" onClick={handleExport}>
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Export
@@ -74,5 +90,3 @@ export default function CampaignsPage() {
     </Tabs>
   );
 }
-
-    

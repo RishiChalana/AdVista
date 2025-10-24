@@ -1,8 +1,7 @@
 'use client';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Users, Server, Database } from 'lucide-react';
 import { User, Campaign, AdminDashboard } from '@/lib/types';
@@ -58,11 +57,13 @@ export default function AdminDashboardPage() {
   }, [firestore, userProfile]);
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  const activeCampaignsCollectionRef = useMemoFirebase(() => {
+  const allCampaignsCollectionRef = useMemoFirebase(() => {
     if (!firestore || userProfile?.role !== 'Admin') return null;
-    return query(collection(firestore, 'campaigns'), where('status', '==', 'Active'));
+    return collection(firestore, 'campaigns');
   }, [firestore, userProfile]);
-  const { data: activeCampaigns, isLoading: isLoadingActiveCampaigns } = useCollection<Campaign>(activeCampaignsCollectionRef);
+  const { data: allCampaigns, isLoading: isLoadingAllCampaigns } = useCollection<Campaign>(allCampaignsCollectionRef);
+
+  const activeCampaigns = allCampaigns?.filter(c => c.status === 'Active');
 
   const isLoading = isUserLoading || isUserProfileLoading;
 
@@ -79,7 +80,7 @@ export default function AdminDashboardPage() {
     { title: 'Database Health', value: adminData?.databaseHealth || 'Online', icon: Database, isLoading: isLoadingAdminData },
     { title: 'Server Health', value: adminData?.serverHealth || 'Online', icon: Server, isLoading: isLoadingAdminData },
     { title: 'Total Users', value: users?.length ?? 0, icon: Users, isLoading: isLoadingUsers },
-    { title: 'Active Campaigns', value: activeCampaigns?.length ?? 0, icon: BarChart, isLoading: isLoadingActiveCampaigns },
+    { title: 'Active Campaigns', value: activeCampaigns?.length ?? 0, icon: BarChart, isLoading: isLoadingAllCampaigns },
   ];
 
   return (
