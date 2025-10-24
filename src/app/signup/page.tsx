@@ -10,8 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
-import { signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -56,23 +55,38 @@ export default function SignupPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const userCredential = await initiateEmailSignUp(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       
-      if (auth.currentUser) {
-          await updateProfile(auth.currentUser, {
-              displayName: values.fullName
-          });
+      const user = userCredential.user;
+      await updateProfile(user, {
+          displayName: values.fullName
+      });
       
-          // Now create user document in Firestore
-          const userRef = doc(firestore, 'users', auth.currentUser.uid);
-          await setDoc(userRef, {
-              id: auth.currentUser.uid,
-              name: values.fullName,
-              email: values.email,
-              role: 'Admin', // Default role
-              createdAt: new Date().toISOString(),
-          });
+      const role = values.email === 'admin@adsparkx.com' ? 'Admin' : 'Viewer';
+
+      // Now create user document in Firestore
+      const userRef = doc(firestore, 'users', user.uid);
+      await setDoc(userRef, {
+          id: user.uid,
+          name: values.fullName,
+          email: values.email,
+          role: role,
+          createdAt: new Date().toISOString(),
+      });
+
+      // Special case for admin to create admin dashboard data
+      if (role === 'Admin') {
+        const adminDashboardRef = doc(firestore, 'admin_dashboard', 'data');
+        await setDoc(adminDashboardRef, {
+            id: 'data',
+            databaseHealth: 'Online',
+            serverHealth: 'Online',
+            totalUsers: 1,
+            activeCampaigns: 0,
+            systemLogs: [`Admin user ${values.email} created at ${new Date().toISOString()}`]
+        }, { merge: true });
       }
+
     } catch (error: any) {
         toast({
             variant: "destructive",
@@ -93,7 +107,7 @@ export default function SignupPage() {
           id: user.uid,
           name: user.displayName,
           email: user.email,
-          role: 'Admin', // Default role
+          role: 'Viewer', // Default role for Google Sign-in
           createdAt: new Date().toISOString(),
           avatar: user.photoURL
       }, { merge: true }); // Merge to not overwrite if exists

@@ -26,3 +26,12 @@ export type Report = {
   generatedAt: string;
   campaignIds: string[];
 };
+
+export type AdminDashboard = {
+    id: string;
+    databaseHealth: string;
+    serverHealth: string;
+    totalUsers: number;
+    activeCampaigns: number;
+    systemLogs: string[];
+};

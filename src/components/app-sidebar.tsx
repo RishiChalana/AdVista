@@ -8,6 +8,7 @@ import {
   Users,
   Settings,
   Bot,
+  ShieldCheck
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,12 +34,14 @@ export function AppSidebar() {
   }, [firestore, authUser]);
 
   const { data: userProfile } = useDoc<User>(userDocRef);
+  const isAdmin = userProfile?.role === 'Admin';
 
   const menuItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, show: true },
     { href: "/campaigns", label: "Campaigns", icon: Megaphone, show: true },
     { href: "/reports", label: "Reports", icon: FileText, show: true },
-    { href: "/users", label: "Users", icon: Users, show: userProfile?.role === 'Admin' },
+    { href: "/users", label: "Users", icon: Users, show: isAdmin },
+    { href: "/admin", label: "Admin", icon: ShieldCheck, show: isAdmin },
   ];
   
   return (
@@ -55,7 +58,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}
+                isActive={pathname.startsWith(item.href)}
                 tooltip={{ children: item.label, side: "right", align: "center" }}
               >
                 <Link href={item.href}>
