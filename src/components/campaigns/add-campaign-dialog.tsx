@@ -75,12 +75,12 @@ export function AddCampaignDialog() {
       });
       form.reset();
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating campaign:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'There was a problem creating your campaign.',
+        description: error.message || 'There was a problem creating your campaign.',
       });
     }
   };
