@@ -1,4 +1,7 @@
-import { campaigns } from '@/lib/data';
+'use client';
+
+import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { DataTable } from '@/components/campaigns/data-table';
 import { columns } from '@/components/campaigns/columns';
 import { Button } from '@/components/ui/button';
@@ -9,8 +12,26 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { Campaign } from '@/lib/types';
 
 export default function CampaignsPage() {
+  const firestore = useFirestore();
+  
+  const campaignsCollection = useMemoFirebase(
+    () => collection(firestore, 'campaigns'),
+    [firestore]
+  );
+  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
+
+  if (isLoading) {
+    return <div>Loading campaigns...</div>
+  }
+
+  const activeCampaigns = campaigns?.filter(c => c.status === 'Active') || [];
+  const pausedCampaigns = campaigns?.filter(c => c.status === 'Paused') || [];
+  const endedCampaigns = campaigns?.filter(c => c.status === 'Ended') || [];
+
+
   return (
     <Tabs defaultValue="all">
       <div className="flex items-center">
@@ -38,16 +59,16 @@ export default function CampaignsPage() {
         </div>
       </div>
       <TabsContent value="all">
-        <DataTable columns={columns} data={campaigns} />
+        <DataTable columns={columns} data={campaigns || []} />
       </TabsContent>
       <TabsContent value="active">
-        <DataTable columns={columns} data={campaigns.filter(c => c.status === 'Active')} />
+        <DataTable columns={columns} data={activeCampaigns} />
       </TabsContent>
        <TabsContent value="paused">
-        <DataTable columns={columns} data={campaigns.filter(c => c.status === 'Paused')} />
+        <DataTable columns={columns} data={pausedCampaigns} />
       </TabsContent>
        <TabsContent value="ended">
-        <DataTable columns={columns} data={campaigns.filter(c => c.status === 'Ended')} />
+        <DataTable columns={columns} data={endedCampaigns} />
       </TabsContent>
     </Tabs>
   );

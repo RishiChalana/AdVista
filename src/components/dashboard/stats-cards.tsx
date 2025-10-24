@@ -12,9 +12,11 @@ import {
   Activity,
 } from 'lucide-react';
 import type { Campaign } from '@/lib/types';
+import { Skeleton } from '../ui/skeleton';
 
 type StatsCardsProps = {
   campaigns: Campaign[];
+  isLoading: boolean;
 };
 
 function calculateStats(campaigns: Campaign[]) {
@@ -37,7 +39,7 @@ function calculateStats(campaigns: Campaign[]) {
   };
 }
 
-export function StatsCards({ campaigns }: StatsCardsProps) {
+export function StatsCards({ campaigns, isLoading }: StatsCardsProps) {
   const stats = calculateStats(campaigns);
 
   const cardData = [
@@ -67,6 +69,23 @@ export function StatsCards({ campaigns }: StatsCardsProps) {
       icon: DollarSign,
     },
   ];
+
+  if (isLoading) {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i} className="rounded-2xl">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <Skeleton className="h-4 w-2/3" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-8 w-1/2" />
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">

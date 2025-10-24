@@ -1,13 +1,25 @@
-import { campaigns } from '@/lib/data';
+'use client';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, BarChart, DollarSign, Eye, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CampaignInsights from '@/components/campaigns/campaign-insights';
+import { Campaign } from '@/lib/types';
 
 export default function CampaignDetailPage({ params }: { params: { id: string } }) {
-  const campaign = campaigns.find((c) => c.id === parseInt(params.id));
+  const firestore = useFirestore();
+  const campaignRef = useMemoFirebase(
+    () => doc(firestore, 'campaigns', params.id),
+    [firestore, params.id]
+  );
+  const { data: campaign, isLoading } = useDoc<Campaign>(campaignRef);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!campaign) {
     notFound();

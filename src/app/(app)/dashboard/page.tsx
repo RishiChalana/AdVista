@@ -1,7 +1,8 @@
+'use client';
 import { CtrChart } from '@/components/dashboard/ctr-chart';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { StatsCards } from '@/components/dashboard/stats-cards';
-import { campaigns, ctrData, revenueData } from '@/lib/data';
+import { ctrData, revenueData } from '@/lib/data';
 import {
   Select,
   SelectContent,
@@ -11,8 +12,15 @@ import {
 } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { ListFilter } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Campaign } from '@/lib/types';
 
 export default function DashboardPage() {
+  const firestore = useFirestore();
+  const campaignsCollection = useMemoFirebase(() => collection(firestore, 'campaigns'), [firestore]);
+  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -43,7 +51,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <StatsCards campaigns={campaigns} />
+      <StatsCards campaigns={campaigns || []} isLoading={isLoading} />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <div className="lg:col-span-4">

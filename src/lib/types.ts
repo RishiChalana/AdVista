@@ -1,5 +1,5 @@
 export type Campaign = {
-  id: number;
+  id: string; // Changed to string for Firestore
   name: string;
   platform: 'Google Ads' | 'Meta' | 'Twitter' | 'LinkedIn';
   budget: number;
@@ -12,7 +12,7 @@ export type Campaign = {
 };
 
 export type User = {
-  id: number;
+  id: string; // Changed to string for Firestore
   name: string;
   email: string;
   role: 'Admin' | 'Analyst' | 'Viewer';

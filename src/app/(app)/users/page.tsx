@@ -1,4 +1,8 @@
-import { users } from '@/lib/data';
+'use client';
+
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +17,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function UsersPage() {
+    const firestore = useFirestore();
+    const usersCollection = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
+    const { data: users, isLoading } = useCollection<User>(usersCollection);
+
+    if (isLoading) {
+        return <div>Loading users...</div>;
+    }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -42,7 +54,7 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {users?.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
