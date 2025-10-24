@@ -78,6 +78,7 @@ export function AddCampaignDialog() {
       conversions: 0,
       revenue: 0,
       roi: 0,
+      createdAt: new Date().toISOString(),
     });
     toast({
       title: 'Campaign Created',

@@ -1,11 +1,14 @@
 'use client';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Users, Server, Database } from 'lucide-react';
 import { User, Campaign, AdminDashboard } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 function AdminStatCard({
   title,
@@ -82,6 +85,11 @@ export default function AdminDashboardPage() {
     { title: 'Total Users', value: users?.length ?? 0, icon: Users, isLoading: isLoadingUsers },
     { title: 'Active Campaigns', value: activeCampaigns?.length ?? 0, icon: BarChart, isLoading: isLoadingAllCampaigns },
   ];
+  
+  const getUserName = (userId: string) => {
+    const user = users?.find(u => u.id === userId);
+    return user ? user.name : 'Unknown User';
+  }
 
   return (
     <div className="space-y-6">
@@ -97,6 +105,58 @@ export default function AdminDashboardPage() {
           <AdminStatCard key={stat.title} {...stat} />
         ))}
       </div>
+      
+       <Card>
+        <CardHeader>
+          <CardTitle>All Campaigns</CardTitle>
+          <CardDescription>A list of all campaigns across the platform.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Campaign</TableHead>
+                <TableHead>Owner</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead className="text-right">Budget</TableHead>
+                <TableHead className="text-right">Revenue</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoadingAllCampaigns || isLoadingUsers ? (
+                 Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                       <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                       <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                       <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                       <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                       <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                    </TableRow>
+                 ))
+              ) : allCampaigns && allCampaigns.length > 0 ? (
+                allCampaigns.map(campaign => (
+                  <TableRow key={campaign.id}>
+                    <TableCell className="font-medium">{campaign.name}</TableCell>
+                    <TableCell>{getUserName(campaign.userId)}</TableCell>
+                    <TableCell><Badge variant={campaign.status === 'Active' ? 'default' : 'secondary'}>{campaign.status}</Badge></TableCell>
+                    <TableCell>{format(new Date(campaign.createdAt), 'PPP')}</TableCell>
+                    <TableCell className="text-right">${campaign.budget.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">${campaign.revenue.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No campaigns found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
        <Card>
         <CardHeader>

@@ -11,6 +11,7 @@ export type Campaign = {
   conversions: number;
   revenue: number;
   status: 'Active' | 'Paused' | 'Ended';
+  createdAt: string;
   roi?: number;
 };
 
