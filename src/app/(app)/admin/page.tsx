@@ -48,13 +48,13 @@ export default function AdminDashboardPage() {
   }, [firestore, user]);
   const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<User>(userDocRef);
 
+  const isAdmin = userProfile?.role === 'Admin';
+
   const adminDashboardRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'admin_dashboard', 'data');
   }, [firestore]);
   const { data: adminData, isLoading: isLoadingAdminData } = useDoc<AdminDashboard>(adminDashboardRef);
-
-  const isAdmin = userProfile?.role === 'Admin';
 
   const usersCollectionRef = useMemoFirebase(() => {
     if (!firestore || !isAdmin) return null;

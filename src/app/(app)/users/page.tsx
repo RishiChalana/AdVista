@@ -30,11 +30,13 @@ export default function UsersPage() {
     }, [firestore, authUser]);
     const { data: currentUser, isLoading: isLoadingCurrentUser } = useDoc<User>(currentUserDocRef);
 
+    const isAdmin = currentUser?.role === 'Admin';
+
     // Get all users if current user is admin
     const usersCollectionRef = useMemoFirebase(() => {
-        if (!firestore || !currentUser || currentUser.role !== 'Admin') return null;
+        if (!firestore || !isAdmin) return null;
         return collection(firestore, 'users');
-    }, [firestore, currentUser]);
+    }, [firestore, isAdmin]);
     const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
     
     const isLoading = isUserLoading || isLoadingCurrentUser;
@@ -91,7 +93,7 @@ export default function UsersPage() {
         )
     }
 
-    if (currentUser?.role !== 'Admin') {
+    if (!isAdmin) {
         notFound();
         return null;
     }

@@ -42,26 +42,12 @@ export default function AppLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userProfile, isLoading: isUserProfileLoading } = useDoc<User>(userDocRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
     }
-
-    if(!isUserProfileLoading && userProfile) {
-        if(userProfile.role === 'Admin') {
-            router.push('/admin');
-        }
-    }
-
-  }, [user, isUserLoading, router, userProfile, isUserProfileLoading]);
+  }, [user, isUserLoading, router]);
 
   if (isUserLoading || !user) {
     return <AppLoading />;
