@@ -54,16 +54,18 @@ export default function AdminDashboardPage() {
   }, [firestore]);
   const { data: adminData, isLoading: isLoadingAdminData } = useDoc<AdminDashboard>(adminDashboardRef);
 
+  const isAdmin = userProfile?.role === 'Admin';
+
   const usersCollectionRef = useMemoFirebase(() => {
-    if (!firestore || userProfile?.role !== 'Admin') return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, 'users');
-  }, [firestore, userProfile]);
+  }, [firestore, isAdmin]);
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const allCampaignsCollectionRef = useMemoFirebase(() => {
-    if (!firestore || userProfile?.role !== 'Admin') return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, 'campaigns');
-  }, [firestore, userProfile]);
+  }, [firestore, isAdmin]);
   const { data: allCampaigns, isLoading: isLoadingAllCampaigns } = useCollection<Campaign>(allCampaignsCollectionRef);
 
   const activeCampaigns = allCampaigns?.filter(c => c.status === 'Active');
@@ -74,7 +76,7 @@ export default function AdminDashboardPage() {
     return <div>Loading...</div>;
   }
   
-  if (userProfile?.role !== 'Admin') {
+  if (!isAdmin) {
       notFound();
       return null;
   }
