@@ -4,7 +4,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { LogIn, PlusCircle, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,15 +17,49 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AdminGuard } from '@/components/admin/admin-guard';
+import { useToast } from '@/hooks/use-toast';
+import { createImpersonationToken } from '@/lib/firebase/adminFunctions';
+import { useAuth } from '@/firebase/provider';
+import { signInWithCustomToken } from 'firebase/auth';
 
 function UsersPageContent() {
-    const firestore = useFirestore();
+  const firestore = useFirestore();
+  const auth = useAuth();
+  const { toast } = useToast();
 
-    const usersCollectionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'users');
-    }, [firestore]);
-    const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+  const usersCollectionRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
+
+  const handleImpersonate = async (targetUser: User) => {
+    if (!auth.currentUser) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Admin user not found.' });
+      return;
+    }
+    if (window.confirm(`Are you sure you want to impersonate ${targetUser.name}?`)) {
+      try {
+        // Store current admin session before impersonating
+        const adminUser = auth.currentUser;
+        sessionStorage.setItem('admin_impersonation_user', JSON.stringify(adminUser));
+
+        const result = await createImpersonationToken({ targetUid: targetUser.id });
+        if (result.token) {
+          await signInWithCustomToken(auth, result.token);
+          toast({ title: 'Impersonation Started', description: `You are now impersonating ${targetUser.name}.` });
+          // Force a full reload to re-initialize the app state as the new user
+          window.location.href = '/dashboard';
+        } else {
+          throw new Error(result.error || 'Failed to get impersonation token.');
+        }
+      } catch (error: any) {
+        console.error("Impersonation failed:", error);
+        toast({ variant: 'destructive', title: 'Impersonation Failed', description: error.message });
+        sessionStorage.removeItem('admin_impersonation_user');
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -97,6 +131,10 @@ function UsersPageContent() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleImpersonate(user)}>
+                              <LogIn className="mr-2 h-4 w-4" />
+                              Impersonate User
+                            </DropdownMenuItem>
                             <DropdownMenuItem disabled>Edit Role</DropdownMenuItem>
                             <DropdownMenuItem disabled>Delete User</DropdownMenuItem>
                         </DropdownMenuContent>
