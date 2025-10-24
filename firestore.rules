@@ -1,110 +1,144 @@
 /**
- * @file Firestore Security Rules
- * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and reports nested under user profiles.
- *   Campaigns and Messages have basic existence checks but are generally open for read/write access.
- *   The rules prioritize authorization independence and structural segregation for enhanced security.
- * @data_structure
- *   /users/{userId}: Stores user profiles. Enforces strict ownership.
- *   /campaigns/{campaignId}: Stores campaign data. Basic existence checks apply.
- *   /users/{userId}/reports/{reportId}: Stores user-specific reports. Enforces strict ownership.
- *   /campaigns/{campaignId}/reports/{reportId}: Stores campaign-specific reports. Enforces existence.
- *   /messages/{messageId}: Stores contact form messages. Basic existence checks apply.
- * @key_security_decisions
- *   - Listing of users is explicitly denied to prevent information disclosure.
- *   - Campaigns and Messages are writable by anyone, for prototyping purposes. In a production app, you would want to secure these collections properly.
- *   - Data validation is minimal during this prototyping phase and focuses only on authorization-critical fields.
- * @denormalization_for_authorization N/A
- * @structural_segregation User data, campaign data, and contact form messages are stored in separate top-level collections.
+ * @fileOverview Firestore Security Rules for the Advista platform.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and their associated reports.
+ * Campaigns and Messages are publicly readable, but write operations are restricted.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles, accessible only by the owning user.
+ * - /campaigns/{campaignId}: Stores campaign data, publicly readable.
+ * - /users/{userId}/reports/{reportId}: Stores user-specific reports, accessible only by the owning user.
+ * - /campaigns/{campaignId}/reports/{reportId}: Stores campaign-specific reports.  Requires campaign and report existence.
+ * - /messages/{messageId}: Stores contact form messages, publicly readable.
+ *
+ * Key Security Decisions:
+ * - User listing is explicitly denied to prevent information disclosure.
+ * - Campaigns and Messages are publicly readable to allow for open access.
+ * - Strict ownership is enforced for user profiles and their reports.
+ *
+ * Denormalization for Authorization:
+ * - Reports are stored as subcollections of both Users and Campaigns to ensure Authorization Independence.
+ *   This allows security rules to validate access without needing to read other documents, facilitating atomic operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces access control for user profiles. Only the authenticated user can read or write their own profile.
+     * @description Enforces document ownership for user profiles.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user with UID 'user_abc' can create their own profile at /users/user_abc.
-     * @allow (get, update, delete) - Authenticated user with UID 'user_abc' can read, update, or delete their own profile at /users/user_abc.
-     * @deny (create) - Authenticated user with UID 'user_abc' cannot create a profile at /users/different_user.
-     * @deny (get, update, delete) - Authenticated user with UID 'user_abc' cannot read, update, or delete the profile of another user at /users/different_user.
+     * @allow (create) - User with UID 'user123' can create a profile at /users/user123.
+     * @allow (get) - User with UID 'user123' can read their profile at /users/user123.
+     * @allow (update) - User with UID 'user123' can update their profile at /users/user123.
+     * @allow (delete) - User with UID 'user123' can delete their profile at /users/user123.
+     * @deny (create) - User with UID 'user456' cannot create a profile at /users/user123.
+     * @deny (get) - User with UID 'user456' cannot read the profile at /users/user123.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      // Helper function to check if the authenticated user is the owner of the resource.
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+      // Verified identity
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Helper function to check if the authenticated user is the existing owner of the resource.
+      // Access control function: is owner
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      //Access control function: is existing owner
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return (isOwner(userId) && resource != null);
       }
 
       allow get: if isOwner(userId);
-      allow list: if false; // Listing users is not permitted.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id; // Enforce immutability of user ID.
+      allow list: if false; // User listing is not permitted for privacy.
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId) ;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows access to campaign data. In this prototype, anyone can read and write campaign data.
+     * @description Allows public read access to campaign data, but restricts write operations.
      * @path /campaigns/{campaignId}
-     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a campaign.
-     * @principle Permits any authenticated or unauthenticated user to perform any action on a campaign.
+     * @allow (get) - Any user can read a campaign at /campaigns/campaign123.
+     * @allow (list) - Any user can list campaigns.
+     * @deny (create) - No user can create a campaign.
+     * @deny (update) - No user can update a campaign.
+     * @principle Allows public read access while restricting write operations.
      */
     match /campaigns/{campaignId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Enforces access control for reports nested under user profiles. Only the authenticated user can read or write their own reports.
+     * @description Enforces document ownership for reports within a user's profile.
      * @path /users/{userId}/reports/{reportId}
-     * @allow (create) - Authenticated user with UID 'user_abc' can create a report under their profile at /users/user_abc/reports/report_xyz.
-     * @allow (get, update, delete) - Authenticated user with UID 'user_abc' can read, update, or delete their own report at /users/user_abc/reports/report_xyz.
-     * @deny (create) - Authenticated user with UID 'user_abc' cannot create a report under another user's profile at /users/different_user/reports/report_xyz.
-     * @deny (get, update, delete) - Authenticated user with UID 'user_abc' cannot read, update, or delete a report belonging to another user at /users/different_user/reports/report_xyz.
+     * @allow (create) - User with UID 'user123' can create a report at /users/user123/reports/report456.
+     * @allow (get) - User with UID 'user123' can read their report at /users/user123/reports/report456.
+     * @allow (update) - User with UID 'user123' can update their report at /users/user123/reports/report456.
+     * @allow (delete) - User with UID 'user123' can delete their report at /users/user123/reports/report456.
+     * @deny (create) - User with UID 'user456' cannot create a report at /users/user123/reports/report456.
+     * @deny (get) - User with UID 'user456' cannot read the report at /users/user123/reports/report456.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/reports/{reportId} {
-      // Helper function to check if the authenticated user is the owner of the resource.
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+          // Verified identity
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Helper function to check if the authenticated user is the existing owner of the resource.
+      // Access control function: is owner
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      //Access control function: is existing owner
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return (isOwner(userId) && resource != null);
       }
 
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId; // Enforce immutability of userId.
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
-        /**
-     * @description Allows access to reports nested under campaign. In this prototype, anyone can read and write report data.
-     * @path /campaigns/{campaignId}/reports/{reportId}
-     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a campaign report.
-     * @principle Permits any authenticated or unauthenticated user to perform any action on a campaign report.
-     */
-        match /campaigns/{campaignId}/reports/{reportId} {
-          allow get, list: if true;
-          allow create, update, delete: if true;
-        }
+      /**
+       * @description Allows existence checks for reports associated with a campaign.
+       * @path /campaigns/{campaignId}/reports/{reportId}
+       * @allow (get) - Any user can read a report at /campaigns/campaign123/reports/report456 if it exists.
+       * @allow (list) - Any user can list reports associated with a campaign.
+       * @deny (create) - No user can create a report.
+       * @deny (update) - No user can update a report.
+       * @principle Allows public read access while restricting write operations.
+       */
+    match /campaigns/{campaignId}/reports/{reportId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
 
     /**
-     * @description Allows access to contact form messages. In this prototype, anyone can read and write messages data.
+     * @description Allows public read access to messages, but restricts write operations.
      * @path /messages/{messageId}
-     * @allow (get, list, create, update, delete) - Any user (authenticated or unauthenticated) can perform any operation on a message.
-     * @principle Permits any authenticated or unauthenticated user to perform any action on a message.
+     * @allow (get) - Any user can read a message at /messages/message123.
+     * @allow (list) - Any user can list messages.
+     * @deny (create) - No user can create a message.
+     * @deny (update) - No user can update a message.
+     * @principle Allows public read access while restricting write operations.
      */
     match /messages/{messageId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

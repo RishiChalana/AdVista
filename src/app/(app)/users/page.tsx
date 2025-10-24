@@ -1,7 +1,7 @@
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
@@ -15,18 +15,67 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UsersPage() {
     const firestore = useFirestore();
     const { user: authUser } = useUser();
-    const usersCollection = useMemoFirebase(() => {
+    
+    const userDocRef = useMemoFirebase(() => {
         if (!firestore || !authUser) return null;
-        return collection(firestore, 'users');
+        return doc(firestore, 'users', authUser.uid);
     }, [firestore, authUser]);
-    const { data: users, isLoading } = useCollection<User>(usersCollection);
+
+    const { data: user, isLoading } = useDoc<User>(userDocRef);
 
     if (isLoading) {
-        return <div>Loading users...</div>;
+        return (
+            <div className="space-y-6">
+                 <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold font-headline tracking-tight">User Management</h1>
+                        <p className="text-muted-foreground">Manage users and their roles.</p>
+                    </div>
+                    <Button disabled>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add User
+                    </Button>
+                </div>
+                <Card>
+                    <CardHeader>
+                    <CardTitle>My Profile</CardTitle>
+                    <CardDescription>Your user information.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-10 w-10 rounded-full" />
+                                            <Skeleton className="h-4 w-24" />
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                                    <TableCell>
+                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
   return (
@@ -36,7 +85,7 @@ export default function UsersPage() {
           <h1 className="text-3xl font-bold font-headline tracking-tight">User Management</h1>
           <p className="text-muted-foreground">Manage users and their roles.</p>
         </div>
-        <Button>
+        <Button disabled>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add User
         </Button>
@@ -44,8 +93,8 @@ export default function UsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>A list of all users in the system.</CardDescription>
+          <CardTitle>My Profile</CardTitle>
+          <CardDescription>Your user information. Listing all users is disabled for security reasons.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -58,7 +107,7 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.map((user) => (
+              {user ? (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -82,13 +131,19 @@ export default function UsersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                        <DropdownMenuItem disabled>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                        Could not load your user profile.
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

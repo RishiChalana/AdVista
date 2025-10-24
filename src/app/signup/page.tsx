@@ -69,7 +69,7 @@ export default function SignupPage() {
               id: auth.currentUser.uid,
               name: values.fullName,
               email: values.email,
-              role: 'Viewer', // Default role
+              role: 'Admin', // Default role
               createdAt: new Date().toISOString(),
           });
       }
@@ -93,7 +93,7 @@ export default function SignupPage() {
           id: user.uid,
           name: user.displayName,
           email: user.email,
-          role: 'Viewer', // Default role
+          role: 'Admin', // Default role
           createdAt: new Date().toISOString(),
           avatar: user.photoURL
       }, { merge: true }); // Merge to not overwrite if exists
