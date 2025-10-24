@@ -35,6 +35,7 @@ import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, getFirestore } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 
 const campaignSchema = z.object({
   name: z.string().min(1, 'Campaign name is required.'),
@@ -47,6 +48,7 @@ export function AddCampaignDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const firestore = getFirestore();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof campaignSchema>>({
     resolver: zodResolver(campaignSchema),
@@ -59,9 +61,18 @@ export function AddCampaignDialog() {
   });
 
   const onSubmit = (values: z.infer<typeof campaignSchema>) => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to create a campaign."
+        });
+        return;
+    }
     const campaignsCollection = collection(firestore, 'campaigns');
     addDocumentNonBlocking(campaignsCollection, {
       ...values,
+      userId: user.uid,
       impressions: 0,
       clicks: 0,
       conversions: 0,
@@ -177,3 +188,5 @@ export function AddCampaignDialog() {
     </Dialog>
   );
 }
+
+    

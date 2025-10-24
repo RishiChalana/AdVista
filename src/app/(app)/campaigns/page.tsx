@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { DataTable } from '@/components/campaigns/data-table';
 import { columns } from '@/components/campaigns/columns';
 import { Button } from '@/components/ui/button';
@@ -19,14 +19,15 @@ export default function CampaignsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   
-  const campaignsCollection = useMemoFirebase(
+  const campaignsQuery = useMemoFirebase(
     () => {
         if (!firestore || !user) return null;
-        return collection(firestore, 'campaigns')
+        // Query campaigns collection where userId matches the current user's ID
+        return query(collection(firestore, 'campaigns'), where('userId', '==', user.uid));
     },
     [firestore, user]
   );
-  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
+  const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsQuery);
 
   if (isLoading) {
     return <div>Loading campaigns...</div>
@@ -73,3 +74,5 @@ export default function CampaignsPage() {
     </Tabs>
   );
 }
+
+    

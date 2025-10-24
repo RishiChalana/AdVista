@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export type Campaign = {
   id: string;
+  userId: string;
   name: string;
   platform: 'Google Ads' | 'Meta' | 'Twitter' | 'LinkedIn';
   budget: number;
@@ -61,3 +62,5 @@ export const GenerateReportSuggestionsOutputSchema = z.object({
   suggestion: z.string().describe('A concise suggestion on which campaigns to prioritize, pause, or remove based on performance data like ROI, revenue, and conversions.'),
 });
 export type GenerateReportSuggestionsOutput = z.infer<typeof GenerateReportSuggestionsOutputSchema>;
+
+    
