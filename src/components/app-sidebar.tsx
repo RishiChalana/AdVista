@@ -18,16 +18,28 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/users", label: "Users", icon: Users },
-];
+import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { User } from "@/lib/types";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user: authUser } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+
+  const { data: userProfile } = useDoc<User>(userDocRef);
+
+  const menuItems = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, show: true },
+    { href: "/campaigns", label: "Campaigns", icon: Megaphone, show: true },
+    { href: "/reports", label: "Reports", icon: FileText, show: true },
+    { href: "/users", label: "Users", icon: Users, show: userProfile?.role === 'Admin' },
+  ];
   
   return (
     <Sidebar collapsible="icon">
@@ -39,7 +51,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {menuItems.map((item) => (
+          {menuItems.filter(item => item.show).map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild

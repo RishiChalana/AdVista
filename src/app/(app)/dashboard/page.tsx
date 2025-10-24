@@ -2,7 +2,6 @@
 import { CtrChart } from '@/components/dashboard/ctr-chart';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
 import { StatsCards } from '@/components/dashboard/stats-cards';
-import { ctrData, revenueData } from '@/lib/data';
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import { ListFilter } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Campaign } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -24,6 +24,21 @@ export default function DashboardPage() {
     return collection(firestore, 'campaigns')
   }, [firestore, user]);
   const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollection);
+
+  const chartData = useMemo(() => {
+    if (!campaigns) return { revenueData: [], ctrData: [] };
+    
+    // Simple aggregation for chart data from all campaigns.
+    // A more sophisticated implementation could group by date.
+    const revenueData = campaigns.map(c => ({ date: c.name.slice(0,3), revenue: c.revenue }));
+    const ctrData = campaigns.map(c => ({
+        date: c.name.slice(0,3),
+        ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0
+    }));
+
+    return { revenueData, ctrData };
+  }, [campaigns]);
+
 
   return (
     <div className="space-y-6">
@@ -59,10 +74,10 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <div className="lg:col-span-4">
-          <RevenueChart data={revenueData} />
+          <RevenueChart data={chartData.revenueData} />
         </div>
         <div className="lg:col-span-3">
-          <CtrChart data={ctrData} />
+          <CtrChart data={chartData.ctrData} />
         </div>
       </div>
     </div>

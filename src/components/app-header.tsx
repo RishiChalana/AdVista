@@ -1,6 +1,5 @@
 'use client';
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,9 +63,11 @@ export function UserNav() {
                 <span>Settings</span>
             </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <LifeBuoy className="mr-2 h-4 w-4" />
-          <span>Support</span>
+        <DropdownMenuItem asChild>
+            <Link href="/settings">
+                <LifeBuoy className="mr-2 h-4 w-4" />
+                <span>Support</span>
+            </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
@@ -83,7 +84,6 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
        <SidebarTrigger className="md:hidden"/>
       <div className="ml-auto flex items-center gap-2">
-        <ThemeToggle />
         <UserNav />
       </div>
     </header>
