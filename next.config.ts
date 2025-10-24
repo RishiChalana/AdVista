@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow all origins in development for cloud workstation compatibility
+  ...(process.env.NODE_ENV === 'development' && {
+    experimental: {
+      allowedDevOrigins: ['*'],
+    },
+  }),
 };
 
 export default nextConfig;
