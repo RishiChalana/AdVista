@@ -15,6 +15,7 @@ import { CircleUser, LifeBuoy, LogOut, Settings } from 'lucide-react';
 import { useAuth, useUser } from "@/firebase";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function UserNav() {
   const auth = useAuth();
@@ -84,6 +85,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 sm:px-6">
        <SidebarTrigger className="md:hidden"/>
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <UserNav />
       </div>
     </header>

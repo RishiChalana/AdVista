@@ -21,19 +21,16 @@ export function ThemeProvider({
   defaultTheme?: Theme;
   storageKey?: string;
 }) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("light");
-
-  useEffect(() => {
+  const [theme, setTheme] = useState<Theme>(() => {
     try {
-      const storedTheme = localStorage.getItem(storageKey) as Theme;
-      if (storedTheme) {
-        setTheme(storedTheme);
-      }
+        const storedTheme = localStorage.getItem(storageKey) as Theme;
+        return storedTheme || defaultTheme;
     } catch (e) {
-      // ignore
+        return defaultTheme;
     }
-  }, [storageKey]);
+  });
+
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
 
   const applyTheme = useCallback((themeToApply: Theme) => {
     let newResolvedTheme: "dark" | "light";

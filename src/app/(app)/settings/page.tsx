@@ -185,8 +185,11 @@ export default function SettingsPage() {
                     <CardDescription>Customize the look and feel of the app.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Label>Theme</Label>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <Label>Theme</Label>
+                            <p className="text-sm text-muted-foreground">Select the theme for the dashboard.</p>
+                        </div>
                         <ThemeToggle />
                     </div>
                 </CardContent>
