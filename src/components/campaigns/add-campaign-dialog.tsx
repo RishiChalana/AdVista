@@ -58,31 +58,22 @@ export function AddCampaignDialog() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof campaignSchema>) => {
-    try {
-      const campaignsCollection = collection(firestore, 'campaigns');
-      await addDocumentNonBlocking(campaignsCollection, {
-        ...values,
-        impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        revenue: 0,
-        roi: 0,
-      });
-      toast({
-        title: 'Campaign Created',
-        description: `The campaign "${values.name}" has been successfully created.`,
-      });
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'There was a problem creating your campaign.',
-      });
-    }
+  const onSubmit = (values: z.infer<typeof campaignSchema>) => {
+    const campaignsCollection = collection(firestore, 'campaigns');
+    addDocumentNonBlocking(campaignsCollection, {
+      ...values,
+      impressions: 0,
+      clicks: 0,
+      conversions: 0,
+      revenue: 0,
+      roi: 0,
+    });
+    toast({
+      title: 'Campaign Created',
+      description: `The campaign "${values.name}" has been successfully created.`,
+    });
+    form.reset();
+    setOpen(false);
   };
 
   return (
