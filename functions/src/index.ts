@@ -10,9 +10,3 @@
  * export {helloWorld};
  *
  */
-
-import {createImpersonationToken} from "./admin";
-
-export {
-  createImpersonationToken,
-};

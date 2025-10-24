@@ -19,7 +19,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  role: 'Admin' | 'Analyst' | 'Viewer';
+  role: 'Analyst' | 'Viewer';
   is_active: boolean;
   avatar?: string;
   organizationName?: string;
@@ -31,15 +31,6 @@ export type Report = {
   userId: string;
   generatedAt: string;
   campaignIds: string[];
-};
-
-export type AdminDashboard = {
-    id: string;
-    databaseHealth: string;
-    serverHealth: string;
-    totalUsers: number;
-    activeCampaigns: number;
-    systemLogs: string[];
 };
 
 // Schema for the AI suggestion generator

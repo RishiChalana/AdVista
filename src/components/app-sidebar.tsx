@@ -5,10 +5,8 @@ import {
   LayoutDashboard,
   Megaphone,
   FileText,
-  Users,
   Settings,
-  Bot,
-  ShieldCheck
+  Bot
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,29 +17,14 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { doc } from "firebase/firestore";
-import { User } from "@/lib/types";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user: authUser } = useUser();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
-
-  const { data: userProfile } = useDoc<User>(userDocRef);
-  const isAdmin = userProfile?.role === 'Admin';
 
   const menuItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, show: true },
-    { href: "/campaigns", label: "Campaigns", icon: Megaphone, show: true },
-    { href: "/reports", label: "Reports", icon: FileText, show: true },
-    { href: "/users", label: "Users", icon: Users, show: isAdmin },
-    { href: "/admin", label: "Admin", icon: ShieldCheck, show: isAdmin },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/campaigns", label: "Campaigns", icon: Megaphone },
+    { href: "/reports", label: "Reports", icon: FileText },
   ];
   
   return (
@@ -54,7 +37,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {menuItems.filter(item => item.show).map((item) => (
+          {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild

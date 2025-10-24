@@ -69,7 +69,7 @@ export default function SignupPage() {
           name: values.fullName,
           email: values.email,
           organizationName: values.organizationName || null,
-          role: values.email === 'admin@adsparkx.com' ? 'Admin' : 'Viewer', // Set role to Admin for the admin email
+          role: 'Viewer',
           is_active: true,
           createdAt: new Date().toISOString(),
       });
